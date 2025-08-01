@@ -1,10 +1,14 @@
 asgiref==3.9.0
+dj-database-url==3.0.1
 Django==5.2.4
 django-jazzmin==3.0.1
 django-simpleui==2025.6.24
 django-widget-tweaks==1.5.0
+gunicorn==23.0.0
+packaging==25.0
 psycopg2-binary==2.9.10
 python-dateutil==2.9.0.post0
+python-decouple==3.8
 six==1.17.0
 sqlparse==0.5.3
 tzdata==2025.2
