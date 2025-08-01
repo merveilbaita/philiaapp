@@ -14,7 +14,7 @@ from pathlib import Path
 
 import dj_database_url
 
-from decouple import config
+from decouple import config, Csv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,7 +32,14 @@ DEBUG = config('DEBUG', cast=bool)
 
 # votre_projet/settings.py
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(",")
+
+
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='127.0.0.1,localhost',
+    cast=Csv()
+)
+
 
 
 # Application definition
@@ -220,4 +227,5 @@ JAZZMIN_UI_TWEAKS = {
         "danger": "btn-danger",
         "success": "btn-success"
     }
+
 }
