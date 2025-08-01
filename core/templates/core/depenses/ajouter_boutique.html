@@ -1,0 +1,104 @@
+{% load static widget_tweaks %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ajouter une dépense Boutique – Philia App</title>
+  <link href="{% static 'src/output.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="{% url 'dashboard' %}" class="flex items-center text-gray-700 hover:text-gray-900">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <span class="font-medium">Retour au Dashboard</span>
+      </a>
+      <h1 class="text-xl font-bold text-gray-800">Ajouter une dépense Boutique</h1>
+      <div class="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+        {{ user.first_name.0|default:user.username.0|upper }}
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Statistiques -->
+      <section class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-2">💰</span>
+            <p class="text-sm font-medium text-gray-600">Recette brute</p>
+          </div>
+          <p class="text-3xl font-bold text-green-600">{{ recette_brute_jour }} $</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-2">💸</span>
+            <p class="text-sm font-medium text-gray-600">Dépenses</p>
+          </div>
+          <p class="text-3xl font-bold text-red-600">{{ depenses_du_jour }} $</p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
+          <div class="flex items-center mb-2">
+            <span class="text-2xl mr-2">🟢</span>
+            <p class="text-sm font-medium text-gray-600">Reste autorisé</p>
+          </div>
+          <p class="text-3xl font-bold text-blue-600">{{ reste_autorise }} $</p>
+        </div>
+      </section>
+
+      <!-- Formulaire -->
+      <section class="lg:col-span-3 bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+        <h2 class="flex items-center text-2xl font-semibold text-gray-800 mb-6">
+          <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 17v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zM15 17v-6a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          Détails de la dépense
+        </h2>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+          {% csrf_token %}
+          {% for field in form %}
+            {# Ne pas afficher le champ 'secteur' pour la boutique #}
+            {% if field.name != 'secteur' %}
+              <div>
+                <label for="{{ field.id_for_label }}" class="block text-gray-700 font-medium mb-1">
+                  {{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                </label>
+                {{ field|add_class:"w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition" }}
+                {% if field.help_text %}
+                  <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                  <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+          <div class="flex justify-end">
+            <button type="submit"
+                    class="flex items-center bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold shadow transition">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 13l4 4L19 7"/>
+              </svg>
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,278 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dépenses Salon - Philia Salon</title>
+  <link href="{% static 'src/output.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <!-- Logo et nom de l'app -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800">Philia Salon</h1>
+            <p class="text-sm text-gray-500">Dépenses salon</p>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex items-center space-x-6">
+          <a href="{% url 'dashboard_salon' %}" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Dashboard</a>
+          <a href="{% url 'liste_prestations' %}" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Prestations</a>
+          <a href="{% url 'liste_personnel' %}" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Personnel</a>
+          <a href="{% url 'liste_commissions' %}" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Commissions</a>
+          <span class="text-blue-600 font-semibold">Dépenses</span>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenu principal -->
+  <main class="container mx-auto px-6 py-8">
+    
+    <!-- Breadcrumb -->
+    <div class="mb-6">
+      <nav class="flex items-center space-x-2 text-sm text-gray-500">
+        <a href="{% url 'dashboard_salon' %}" class="hover:text-blue-600 transition-colors duration-200">Dashboard</a>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="text-gray-700 font-medium">Dépenses salon</span>
+      </nav>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+      <a href="{% url 'ajouter_depense_salon' %}" 
+         class="flex items-center justify-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Nouvelle dépense
+      </a>
+      
+      <a href="{% url 'dashboard_salon' %}" 
+         class="flex items-center justify-center px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors duration-200">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Retour au Dashboard
+      </a>
+    </div>
+
+    <!-- Statistiques rapides -->
+    {% if depenses %}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Total dépenses -->
+        <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Total dépenses</p>
+              <p class="text-2xl font-bold text-red-600">
+                {% widthratio depenses|length 1 1 as total_count %}
+                {% for d in depenses %}
+                  {% if forloop.first %}
+                    {% widthratio d.montant 1 0 as running_total %}
+                  {% endif %}
+                  {% widthratio running_total 1 1 as temp %}
+                  {% widthratio temp d.montant 1 as running_total %}
+                {% endfor %}
+                {{ total_montant|default:"0"|floatformat:2 }} CDF
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nombre de dépenses -->
+        <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Nombre de dépenses</p>
+              <p class="text-2xl font-bold text-gray-900">{{ depenses|length }}</p>
+            </div>
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Moyenne par dépense -->
+        <div class="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600">Moyenne par dépense</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {% if depenses %}
+                  {{ moyenne_depense|default:"0"|floatformat:2 }} CDF
+                {% else %}
+                  0 CDF
+                {% endif %}
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Liste des dépenses -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/50 overflow-hidden">
+      
+      <!-- En-tête -->
+      <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-white">Toutes les dépenses salon</h2>
+          </div>
+          
+          {% if depenses %}
+            <div class="text-white/80 text-sm">
+              {{ depenses|length }} dépense{{ depenses|length|pluralize }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Tableau -->
+      {% if depenses %}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Date
+                  </div>
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                    </svg>
+                    Description
+                  </div>
+                </th>
+                <th class="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <div class="flex items-center justify-end">
+                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                    Montant
+                  </div>
+                </th>
+                <th class="px-6 py-4 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <div class="flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Secteur
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              {% for d in depenses %}
+                <tr class="hover:bg-red-50 transition-colors duration-200">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ d.date_depense|date:"d/m/Y" }}</div>
+                    {% if d.date_depense|date:"H:i" != "00:00" %}
+                      <div class="text-xs text-gray-500">{{ d.date_depense|date:"H:i" }}</div>
+                    {% endif %}
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="text-sm text-gray-900 max-w-xs">{{ d.description }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <div class="text-lg font-bold text-red-600">{{ d.montant|floatformat:2 }} CDF</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    {% if d.secteur %}
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
+                        {% if d.secteur == 'HOMME' %}bg-blue-100 text-blue-800{% else %}bg-pink-100 text-pink-800{% endif %}">
+                        {{ d.secteur }}
+                      </span>
+                    {% else %}
+                      <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        Non spécifié
+                      </span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pied de page avec statistiques -->
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div class="flex items-center justify-between text-sm text-gray-600">
+            <div class="flex items-center space-x-4">
+              <span class="flex items-center">
+                <span class="w-2 h-2 bg-red-400 rounded-full mr-2"></span>
+                Total dépenses: {{ total_montant|default:"0"|floatformat:2 }} CDF
+              </span>
+            </div>
+            <div class="font-medium">
+              {{ depenses|length }} dépense{{ depenses|length|pluralize }} enregistrée{{ depenses|length|pluralize }}
+            </div>
+          </div>
+        </div>
+
+      {% else %}
+        <!-- État vide -->
+        <div class="p-12 text-center">
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+              </svg>
+            </div>
+            <p class="text-gray-500 font-medium mb-2">Aucune dépense enregistrée</p>
+            <p class="text-gray-400 text-sm mb-6">Commencez par ajouter votre première dépense salon</p>
+            <a href="{% url 'ajouter_depense_salon' %}" 
+               class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              Ajouter une dépense
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+  </main>
+
+</body>
+</html>

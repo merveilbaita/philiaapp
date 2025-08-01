@@ -1,0 +1,85 @@
+{# salon/rapports/depenses_mensuelles.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dépenses Mensuelles – Philia Salon</title>
+  <link href="{% static 'src/output.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="{% url 'dashboard_salon' %}" class="text-gray-700 hover:text-blue-600 font-medium flex items-center">
+        ← Retour
+      </a>
+      <h1 class="text-xl font-bold text-gray-800">Dépenses Mensuelles</h1>
+      <div></div>
+    </div>
+  </header>
+
+  <!-- Contenu principal -->
+  <main class="container mx-auto px-6 py-8">
+
+    <!-- Période et total global -->
+    <div class="mb-8 space-y-2">
+      <p class="text-gray-600">
+        Période : <strong>{{ start|date:"d/m/Y" }}</strong> – <strong>{{ end|date:"d/m/Y" }}</strong>
+      </p>
+      <p class="text-lg font-semibold text-gray-800">
+        Total des dépenses : <span class="text-red-600">{{ total_depenses|floatformat:2 }} CDF</span>
+      </p>
+    </div>
+
+    <!-- Tableau des dépenses -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Date
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Description
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Secteur
+            </th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Montant (CDF)
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for dep in depenses %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ dep.date_depense|date:"d/m/Y" }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {{ dep.description }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {{ dep.secteur|default:"—" }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                {{ dep.montant|floatformat:2 }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                Aucune dépense enregistrée pour cette période.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</body>
+</html>

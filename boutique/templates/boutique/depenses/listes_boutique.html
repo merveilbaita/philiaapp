@@ -1,0 +1,28 @@
+
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Dépenses Boutique</h1>
+
+<table class="table-auto w-full">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Montant</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for depense in depenses %}
+        <tr>
+            <td>{{ depense.description }}</td>
+            <td>{{ depense.montant }} $</td>
+            <td>{{ depense.date_depense }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">Aucune dépense enregistrée.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'ajouter_depense_boutique' %}" class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded">Ajouter Dépense</a>
+{% endblock %}
