@@ -73,6 +73,11 @@
             background-clip: text;
             color: transparent;
         }
+
+        /* Modal */
+        .modal-backdrop {
+            background: rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 flex items-center justify-center p-4">
@@ -193,7 +198,7 @@
                         </div>
                         <span class="ml-2 text-sm text-gray-600 group-hover:text-gray-800 transition-colors">Se souvenir de moi</span>
                     </label>
-                    <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 hover:underline">
+                    <a href="#" id="forgot-password-link" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 hover:underline">
                         Mot de passe oublié ?
                     </a>
                 </div>
@@ -221,7 +226,7 @@
                 </div>
                 <p class="mt-4 text-gray-600">
                     Pas encore inscrit ? 
-                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 hover:underline">
+                    <a href="{% url 'inscription' %}" class="text-indigo-600 hover:text-indigo-800 font-medium transition-colors duration-200 hover:underline">
                         Créer un compte
                     </a>
                 </p>
@@ -233,6 +238,33 @@
             <p class="text-gray-500 text-sm">
                 <span class="text-indigo-500">Philia App</span> © 2025 Hidden Dark Lab. Tous droits réservés.
             </p>
+        </div>
+    </div>
+
+    <!-- Modal mot de passe oublié -->
+    <div id="forgot-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="absolute inset-0 modal-backdrop blur-sm"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6 z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800">Mot de passe oublié</h3>
+                    <p class="text-sm text-gray-600 mt-1">Vous ne pouvez pas réinitialiser votre mot de passe depuis ici.</p>
+                </div>
+                <button aria-label="Fermer" id="modal-close" class="text-gray-500 hover:text-gray-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4">
+                <p class="text-gray-700">Pour récupérer l'accès, veuillez contacter l'administrateur du système :</p>
+                <p class="mt-2"><strong>Email :</strong> <a href="mailto:admin@tondomaine.com" class="text-indigo-600 hover:underline">adminphilia@gmail.com</a></p>
+                <p class="text-sm text-gray-500 mt-1">Si vous ne connaissez pas l'admin, demandez à la personne qui vous a fourni l'accès.</p>
+            </div>
+            <div class="flex justify-end">
+                <button id="modal-ok" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition">Fermer</button>
+            </div>
         </div>
     </div>
 
@@ -259,6 +291,48 @@
             } else {
                 checkbox.classList.remove('opacity-100');
                 checkbox.classList.add('opacity-0');
+            }
+        });
+
+        // Gestion du modal "Mot de passe oublié"
+        const forgotLink = document.getElementById('forgot-password-link');
+        const modal = document.getElementById('forgot-modal');
+        const modalClose = document.getElementById('modal-close');
+        const modalOk = document.getElementById('modal-ok');
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            // mettre le focus sur le bouton fermer pour accessibilité
+            modalOk.focus();
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            forgotLink.focus();
+        }
+
+        if (forgotLink) {
+            forgotLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModal();
+            });
+        }
+
+        modalClose.addEventListener('click', closeModal);
+        modalOk.addEventListener('click', closeModal);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        // Clicking outside modal content closes it
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
             }
         });
     </script>
