@@ -300,7 +300,7 @@ def ajouter_depense_salon(request):
     ).aggregate(total=Sum('montant_paye'))['total'] or Decimal('0')
 
     # Parts salon
-    dispo_homme = brut_homme * Decimal('0.6')
+    dispo_homme = brut_homme * Decimal('0.5')
     dispo_femme = brut_femme * Decimal('0.5')
 
     # Dépenses déjà réalisées
@@ -343,4 +343,5 @@ def ajouter_depense_salon(request):
         'dispo_femme': dispo_femme,
         'dep_f': dep_f,
         'reste_f': reste_f,
+
     })
