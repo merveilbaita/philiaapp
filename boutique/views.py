@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -165,6 +166,8 @@ def rapport_ventes(request):
 
 # nouvlle methode de vente
 
+from django.contrib.auth import get_user_model
+
 @login_required
 def creer_vente(request):
     if request.method == 'POST':
@@ -172,22 +175,59 @@ def creer_vente(request):
         formset = LigneDeVenteFormSet(request.POST)
 
         if vente_form.is_valid() and formset.is_valid():
-            vente = vente_form.save(commit=False)
-            vente.vendeur = request.user
-            vente.save()
+            with transaction.atomic():
+                vente = vente_form.save(commit=False)
+                vente.vendeur = request.user
+                vente.save()
 
-            lignes = formset.save(commit=False)
-            for ligne in lignes:
-                ligne.vente = vente
-                # 🟢 On vérifie et complète si nécessaire
-                if not ligne.prix_unitaire_vente or ligne.prix_unitaire_vente == 0:
-                    ligne.prix_unitaire_vente = ligne.produit.prix_vente
-                ligne.save()
+                lignes = formset.save(commit=False)
+                for form, ligne in zip(formset.forms, lignes):
+                    # Récupérer saisie libre si aucun produit sélectionné
+                    produit_libre = request.POST.get(f"{form.prefix}-produit_libre", '').strip()
+                    produit_obj = None
 
-            vente.calculer_total()
-            vente.finaliser()
-            messages.success(request, "Vente enregistrée avec succès.")
-            return redirect('detail_vente', vente.id)
+                    if ligne.produit_id:
+                        produit_obj = ligne.produit
+                    elif produit_libre:
+                        # get_or_create insensible à la casse sur nom
+                        produit_obj, created = Produit.objects.get_or_create(
+                            nom__iexact=produit_libre,
+                            defaults={
+                                'nom': produit_libre,
+                                'prix_vente': ligne.prix_unitaire_vente or Decimal('0.00'),
+                                'prix_achat': Decimal('0.00'),
+                                # On crée avec un stock égal à la quantité désirée pour éviter l'erreur de stock
+                                'quantite_stock': ligne.quantite or 0,
+                            }
+                        )
+                        # Si le produit existait mais n'a pas assez de stock, on laisse la validation gérer via clean()
+                        ligne.produit = produit_obj
+                    else:
+                        # Aucun produit ni libre : laisser la validation du formset remonter
+                        pass
+
+                    # Si prix de vente manquant et produit connu
+                    if (not ligne.prix_unitaire_vente or ligne.prix_unitaire_vente == 0) and ligne.produit:
+                        ligne.prix_unitaire_vente = ligne.produit.prix_vente
+
+                    ligne.vente = vente
+                    ligne.full_clean()  # pour déclencher clean() (notamment sur stock)
+                    ligne.save()
+
+                # Calcul et finalisation
+                vente.calculer_total()
+                try:
+                    vente.finaliser()
+                except ValidationError as e:
+                    transaction.set_rollback(True)
+                    messages.error(request, f"Erreur lors de la finalisation : {e}")
+                    return render(request, 'boutique/ventes/creer_vente.html', {
+                        'vente_form': vente_form,
+                        'formset': formset
+                    })
+
+                messages.success(request, "Vente enregistrée avec succès.")
+                return redirect('detail_vente', vente.id)
     else:
         vente_form = VenteForm()
         formset = LigneDeVenteFormSet()
@@ -196,6 +236,25 @@ def creer_vente(request):
         'vente_form': vente_form,
         'formset': formset
     })
+
+
+@login_required
+def produit_autocomplete(request):
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        produits = Produit.objects.filter(nom__icontains=q).order_by('nom')[:10]
+        for p in produits:
+            results.append({
+                'id': p.id,
+                'text': p.nom,
+                'prix_vente': str(p.prix_vente),
+                'stock': p.quantite_stock,
+                'categorie': p.categorie.nom if p.categorie else '',
+            })
+    return JsonResponse({'results': results})
+
+
 
 
 

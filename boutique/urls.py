@@ -19,4 +19,5 @@ urlpatterns = [
     path('ventes/<int:pk>/', views.detail_vente, name='detail_vente'),
     path('ventes/nouvelle/', views.creer_vente, name='creer_vente'),
     path('ventes/journalier/', views.ventes_journaliere, name='ventes_journaliere'),
+    path('produit-autocomplete/', views.produit_autocomplete, name='produit_autocomplete'),
 ]
