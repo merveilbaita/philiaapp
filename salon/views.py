@@ -33,7 +33,7 @@ def dashboard_salon(request):
     ).aggregate(total=Sum('montant_paye'))['total'] or Decimal('0')
 
     # 2) Part salon
-    revenu_homme = brut_homme * Decimal('0.6')
+    revenu_homme = brut_homme * Decimal('0.5')
     revenu_femme = brut_femme * Decimal('0.5')
     revenus_jour = revenu_homme + revenu_femme
 
@@ -46,7 +46,7 @@ def dashboard_salon(request):
         date_prestation__date=yesterday,
         secteur__nom='FEMME'
     ).aggregate(total=Sum('montant_paye'))['total'] or Decimal('0')
-    revenus_hier = (brut_homme_y * Decimal('0.6')) + (brut_femme_y * Decimal('0.5'))
+    revenus_hier = (brut_homme_y * Decimal('0.5')) + (brut_femme_y * Decimal('0.5'))
 
     # 4) % d'évolution
     if revenus_hier > 0:
@@ -214,7 +214,7 @@ def rapport_salon(request):
 
     # Expressions 60% / 50% pour calcul de la part salon
     expr_homme = ExpressionWrapper(
-        F('montant_paye') * Decimal('0.6'),
+        F('montant_paye') * Decimal('0.5'),
         output_field=DecimalField(max_digits=12, decimal_places=2)
     )
     expr_femme = ExpressionWrapper(
@@ -324,4 +324,5 @@ def rapport_depenses_mensuelles(request):
         'end': end,
         'depenses': qs,
         'total_depenses': total_depenses,
+
     })
