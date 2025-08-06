@@ -184,7 +184,7 @@ sentry_sdk.init(
     dsn=config('SENTRY_DSN', default=''),
     integrations=[DjangoIntegration()],
     traces_sample_rate=0.1,
-    send_default_pii=True,
+    send_default_pii=False,
 )
 
 # ------------------------------------------------------------------------------
@@ -208,4 +208,5 @@ if not DEBUG:
     CSRF_COOKIE_SAMESITE    = 'Lax'
 else:
     SECURE_SSL_REDIRECT = False  # en dev, runserver n’accepte que HTTP
+
 
