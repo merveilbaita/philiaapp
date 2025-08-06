@@ -3,8 +3,8 @@ from pathlib import Path
 import dj_database_url
 from decouple import config, Csv
 
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
+#import sentry_sdk
+#from sentry_sdk.integrations.django import DjangoIntegration
 
 # ------------------------------------------------------------------------------
 # Base
@@ -180,12 +180,7 @@ AXES_LOCKOUT_TEMPLATE = '403.html'
 # ------------------------------------------------------------------------------
 # Sentry (monitoring)
 # ------------------------------------------------------------------------------
-sentry_sdk.init(
-    dsn=config('SENTRY_DSN', default=''),
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=0.1,
-    send_default_pii=False,
-)
+
 
 # ------------------------------------------------------------------------------
 # Sécurité HTTPS / HSTS
@@ -208,5 +203,6 @@ if not DEBUG:
     CSRF_COOKIE_SAMESITE    = 'Lax'
 else:
     SECURE_SSL_REDIRECT = False  # en dev, runserver n’accepte que HTTP
+
 
 
