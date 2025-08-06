@@ -13,3 +13,5 @@ six==1.17.0
 sqlparse==0.5.3
 tzdata==2025.2
 whitenoise==6.9.0
+django-axes>=5.0.0
+
