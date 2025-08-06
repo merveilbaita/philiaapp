@@ -176,12 +176,7 @@ AXES_LOCKOUT_TEMPLATE = '403.html'
 # ------------------------------------------------------------------------------
 # Sentry (monitoring)
 # ------------------------------------------------------------------------------
-sentry_sdk.init(
-    dsn=config('SENTRY_DSN', default=''),
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=0.1,
-    send_default_pii=True,
-)
+
 
 # ------------------------------------------------------------------------------
 # Sécurité HTTPS / HSTS
@@ -208,4 +203,5 @@ if not DEBUG:
 else:
     # En développement, ne pas rediriger en HTTPS
     SECURE_SSL_REDIRECT = False
+
 
