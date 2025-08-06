@@ -169,6 +169,7 @@ JAZZMIN_UI_TWEAKS = {
 # ------------------------------------------------------------------------------
 # AXES (protection contre bruteforce pour les connexions)
 # ------------------------------------------------------------------------------
+AXES_ENABLE_ACCESS_LOG = False
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 1  # en heures
 AXES_LOCKOUT_TEMPLATE = '403.html'
@@ -203,5 +204,6 @@ if not DEBUG:
 else:
     # En développement, ne pas rediriger en HTTPS
     SECURE_SSL_REDIRECT = False
+
 
 
