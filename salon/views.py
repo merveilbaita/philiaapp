@@ -211,52 +211,49 @@ def rapport_salon(request):
     if date_fin:
         qs = qs.filter(date_prestation__date__lte=date_fin)
 
-    # Expressions de part salon (50% homme, 50% femme)
-    expr_part = ExpressionWrapper(
+    # Expressions 60% / 50% pour calcul de la part salon
+    expr_homme = ExpressionWrapper(
         F('montant_paye') * Decimal('0.5'),
         output_field=DecimalField(max_digits=12, decimal_places=2)
     )
-    part_case = Case(
-        When(secteur__nom__in=['HOMME','FEMME'], then=expr_part),
-        default=Value(0),
+    expr_femme = ExpressionWrapper(
+        F('montant_paye') * Decimal('0.5'),
         output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+
+    part_case = Case(
+        When(secteur__nom='HOMME', then=expr_homme),
+        When(secteur__nom='FEMME', then=expr_femme),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
     )
     part_valeur = Coalesce(part_case, Value(0, output_field=DecimalField()))
 
-    # 1. Revenu encaissé sur la période filtrée
-    revenu_encaisse = qs.aggregate(encaisse=Sum(part_valeur))['encaisse'] or Decimal('0')
+    # 1. Montant encaissé (part salon)
+    revenu_encaisse = qs.aggregate(
+        encaisse=Sum(part_valeur)
+    )['encaisse'] or Decimal('0')
 
-    # 2. Commissions totales sur la période filtrée
+    # 2. Total des commissions
     total_commissions = Commission.objects.filter(
         prestation__in=qs
     ).aggregate(total=Sum('montant'))['total'] or Decimal('0')
 
-    # 3. Revenu cumulé (global), sans filtre
-    global_qs = Prestation.objects.all()
-    ca_global = global_qs.aggregate(total=Sum(part_valeur))['total'] or Decimal('0')
-    commissions_global = Commission.objects.filter(
-        prestation__in=global_qs
-    ).aggregate(total=Sum('montant'))['total'] or Decimal('0')
-    profit_global = ca_global - commissions_global
-
-    # 4. Nombre et détail par personnel (inchangé)
+    # 3. Nombre de prestations
     total_prestations = qs.count()
+
+    # 4. Détail par personnel : NB prestations + MONTANT PAYÉ (pas la commission)
     prestations_par_personnel = qs.values('personnel__nom').annotate(
-        nb_prestations=Sum(Value(1, output_field=DecimalField())),
-        montant_total=Sum('montant_paye')
+        nb_prestations=Count('id'),
+        montant_total=Sum('montant_paye')   # <-- ICI on somme le prix payé
     ).order_by('-montant_total')
 
     return render(request, 'salon/rapports/rapport.html', {
-        'date_debut':             date_debut,
-        'date_fin':               date_fin,
-        'total_prestations':      total_prestations,
-        'revenu_encaisse':        revenu_encaisse,
-        'total_commissions':      total_commissions,
+        'date_debut':                date_debut,
+        'date_fin':                  date_fin,
+        'total_prestations':         total_prestations,
+        'revenu_encaisse':           revenu_encaisse,
+        'total_commissions':         total_commissions,
         'prestations_par_personnel': prestations_par_personnel,
-        # nouveaux context pour l'accumulé
-        'ca_global':              ca_global,
-        'commissions_global':     commissions_global,
-        'profit_global':          profit_global,
     })
 
 
@@ -328,4 +325,5 @@ def rapport_depenses_mensuelles(request):
         'total_depenses': total_depenses,
 
     })
+
 
