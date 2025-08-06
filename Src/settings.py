@@ -172,10 +172,18 @@ JAZZMIN_UI_TWEAKS = {
 # ------------------------------------------------------------------------------
 # AXES (protection contre bruteforce pour les connexions)
 # ------------------------------------------------------------------------------
-AXES_ENABLE_ACCESS_LOG = False        # <-- Désactive l’enregistrement detailed (évite le session_hash NOT NULL)
-AXES_FAILURE_LIMIT    = 5
-AXES_COOLOFF_TIME     = 1            # heures
+AXES_ENABLE_ACCESS_LOG = False
+AXES_DISABLE_ACCESS_LOG = True
+AXES_ONLY_USER_FAILURES = True
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1            # heures
 AXES_LOCKOUT_TEMPLATE = '403.html'
+
+# Configuration de l'authentification avec Axes
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # ------------------------------------------------------------------------------
 # Sentry (monitoring)
@@ -202,7 +210,4 @@ if not DEBUG:
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SAMESITE    = 'Lax'
 else:
-    SECURE_SSL_REDIRECT = False  # en dev, runserver n’accepte que HTTP
-
-
-
+    SECURE_SSL_REDIRECT = False  # en dev, runserver n'accepte que HTTP
