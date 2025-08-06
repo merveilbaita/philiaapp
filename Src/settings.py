@@ -3,15 +3,28 @@ from pathlib import Path
 import dj_database_url
 from decouple import config, Csv
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+# ------------------------------------------------------------------------------
 # Base
+# ------------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Sécurité / environnement
+# ------------------------------------------------------------------------------
+# Sécurité / Environnement
+# ------------------------------------------------------------------------------
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='philiaapp.onrender.com,localhost', cast=Csv())
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='philiaapp.onrender.com,localhost',
+    cast=Csv()
+)
 
-# Application definition
+# ------------------------------------------------------------------------------
+# Applications
+# ------------------------------------------------------------------------------
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -24,77 +37,84 @@ INSTALLED_APPS = [
     'boutique.apps.BoutiqueConfig',
     'salon.apps.SalonConfig',
     'widget_tweaks',
+    'axes',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- pour servir les statics en prod
+    'whitenoise.middleware.WhiteNoiseMiddleware',      # sert les static en production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',                  # lockout en cas de trop d’échecs de login
 ]
 
 ROOT_URLCONF = 'Src.urls'
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],  # tu peux ajouter ici des dossiers custom si besoin
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',  # nécessaire pour certains templates/admin
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
+TEMPLATES = [{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [],
+    'APP_DIRS': True,
+    'OPTIONS': {
+        'context_processors': [
+            'django.template.context_processors.request',
+            'django.contrib.auth.context_processors.auth',
+            'django.contrib.messages.context_processors.messages',
+        ],
     },
-]
+}]
 
 WSGI_APPLICATION = 'Src.wsgi.application'
 
-# Database
+# ------------------------------------------------------------------------------
+# Base de données
+# ------------------------------------------------------------------------------
 DATABASES = {
     'default': dj_database_url.parse(
-        config('DATABASE_URL', default='postgresql://postgres:password@localhost:5432/philiaapp_db'),
+        config(
+            'DATABASE_URL',
+            default='postgresql://postgres:password@localhost:5432/philiaapp_db'
+        ),
         conn_max_age=600,
         ssl_require=not DEBUG
     )
 }
 
-# Password validation
+# ------------------------------------------------------------------------------
+# Validation de mot de passe
+# ------------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 10}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# ------------------------------------------------------------------------------
 # Internationalisation
+# ------------------------------------------------------------------------------
 LANGUAGE_CODE = 'fr-FR'
 TIME_ZONE = 'Africa/Lubumbashi'
 USE_I18N = True
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# ------------------------------------------------------------------------------
+# Static files
+# ------------------------------------------------------------------------------
 STATIC_URL = 'static/'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+# ------------------------------------------------------------------------------
+# Autres paramètres
+# ------------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/connexion/'
 
-# Default primary key
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# --- JAZZMIN SETTINGS ---
+# ------------------------------------------------------------------------------
+# JAZZMIN (Admin personnalisé)
+# ------------------------------------------------------------------------------
 JAZZMIN_SETTINGS = {
     "site_title": "Philia App Admin",
     "site_header": "Philia App",
@@ -149,15 +169,45 @@ JAZZMIN_UI_TWEAKS = {
     }
 }
 
-# Sécurité complémentaire (optionnel mais recommandé en prod)
+# ------------------------------------------------------------------------------
+# AXES (protection contre bruteforce pour les connexions)
+# ------------------------------------------------------------------------------
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # en heures
+AXES_LOCKOUT_TEMPLATE = '403.html'
+
+# ------------------------------------------------------------------------------
+# Sentry (monitoring)
+# ------------------------------------------------------------------------------
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=''),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.1,
+    send_default_pii=True,
+)
+
+# ------------------------------------------------------------------------------
+# Sécurité HTTPS / HSTS
+# ------------------------------------------------------------------------------
 if not DEBUG:
+    # Forcer HTTPS
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    # Si derrière un proxy SSL (comme Render), déclare ceci :
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
-    # HSTS (à activer après stabilisation)
-    # SECURE_HSTS_SECONDS = 31536000
-    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    # SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+    # HSTS
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30  # 30 jours
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Headers de sécurité
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+else:
+    # En développement, ne pas rediriger en HTTPS
+    SECURE_SSL_REDIRECT = False
