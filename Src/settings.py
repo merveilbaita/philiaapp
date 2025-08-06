@@ -3,9 +3,6 @@ from pathlib import Path
 import dj_database_url
 from decouple import config, Csv
 
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
-
 # ------------------------------------------------------------------------------
 # Base
 # ------------------------------------------------------------------------------
@@ -211,3 +208,4 @@ if not DEBUG:
 else:
     # En développement, ne pas rediriger en HTTPS
     SECURE_SSL_REDIRECT = False
+
