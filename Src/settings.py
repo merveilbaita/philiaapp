@@ -3,6 +3,9 @@ from pathlib import Path
 import dj_database_url
 from decouple import config, Csv
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
 # ------------------------------------------------------------------------------
 # Base
 # ------------------------------------------------------------------------------
@@ -46,7 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'axes.middleware.AxesMiddleware',                  # lockout en cas de trop d’échecs de login
+    'axes.middleware.AxesMiddleware',                  # protection bruteforce
 ]
 
 ROOT_URLCONF = 'Src.urls'
@@ -169,41 +172,40 @@ JAZZMIN_UI_TWEAKS = {
 # ------------------------------------------------------------------------------
 # AXES (protection contre bruteforce pour les connexions)
 # ------------------------------------------------------------------------------
-AXES_ENABLE_ACCESS_LOG = False
-AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = 1  # en heures
+AXES_ENABLE_ACCESS_LOG = False        # <-- Désactive l’enregistrement detailed (évite le session_hash NOT NULL)
+AXES_FAILURE_LIMIT    = 5
+AXES_COOLOFF_TIME     = 1            # heures
 AXES_LOCKOUT_TEMPLATE = '403.html'
 
 # ------------------------------------------------------------------------------
 # Sentry (monitoring)
 # ------------------------------------------------------------------------------
-
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=''),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.1,
+    send_default_pii=True,
+)
 
 # ------------------------------------------------------------------------------
 # Sécurité HTTPS / HSTS
 # ------------------------------------------------------------------------------
 if not DEBUG:
-    # Forcer HTTPS
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE   = True
+    CSRF_COOKIE_SECURE      = True
+    SECURE_SSL_REDIRECT     = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-    # HSTS
-    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30  # 30 jours
+    SECURE_HSTS_SECONDS           = 60 * 60 * 24 * 30
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_PRELOAD            = True
 
-    # Headers de sécurité
-    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_BROWSER_XSS_FILTER   = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS             = 'DENY'
 
     SESSION_COOKIE_SAMESITE = 'Lax'
-    CSRF_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE    = 'Lax'
 else:
-    # En développement, ne pas rediriger en HTTPS
-    SECURE_SSL_REDIRECT = False
-
-
+    SECURE_SSL_REDIRECT = False  # en dev, runserver n’accepte que HTTP
 
