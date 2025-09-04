@@ -108,8 +108,7 @@
             </div>
         </div>
 
-        <!-- Résumé financier du jour (Boutique) -->
-        <section class="mb-8 bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
+       <section class="mb-8 bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
     <div class="flex items-center mb-6">
         <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
             <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,8 +118,8 @@
         <h2 class="text-2xl font-bold text-gray-800">Résumé financier du jour (Boutique)</h2>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <!-- Recette brute -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        
         <div class="bg-green-50 p-4 rounded-lg border border-green-100">
             <div class="flex items-center mb-2">
                 <span class="text-lg mr-2">💰</span>
@@ -129,7 +128,6 @@
             <p class="text-2xl font-bold text-green-800">{{ recette_brute_jour|default:"0" }} $</p>
         </div>
 
-        <!-- Coût d'approvisionnement -->
         <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
             <div class="flex items-center mb-2">
                 <span class="text-lg mr-2">📦</span>
@@ -138,7 +136,6 @@
             <p class="text-2xl font-bold text-yellow-800">{{ cout_approvisionnement_jour|default:"0" }} $</p>
         </div>
 
-        <!-- Marge brute -->
         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
             <div class="flex items-center mb-2">
                 <span class="text-lg mr-2">💵</span>
@@ -147,7 +144,6 @@
             <p class="text-2xl font-bold text-blue-800">{{ marge_brute_jour|default:"0" }} $</p>
         </div>
 
-        <!-- Dépenses -->
         <div class="bg-red-50 p-4 rounded-lg border border-red-100">
             <div class="flex items-center mb-2">
                 <span class="text-lg mr-2">💸</span>
@@ -155,9 +151,17 @@
             </div>
             <p class="text-2xl font-bold text-red-800">{{ depenses_boutique_jour|default:"0" }} $</p>
         </div>
+
+        <div class="bg-fuchsia-50 p-4 rounded-lg border border-fuchsia-100">
+            <div class="flex items-center mb-2">
+                <span class="text-lg mr-2">🧾</span>
+                <p class="text-sm font-medium text-gray-600">Dettes en cours</p>
+            </div>
+            <p class="text-2xl font-bold text-fuchsia-800">{{ dettes_totales|default:"0" }} $</p>
+        </div>
+
     </div>
 </section>
-
         <!-- Valeur d'approvisionnement -->
         <section class="mb-8 bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/50 hover:shadow-xl transition-all duration-300">
             <div class="flex items-center mb-6">

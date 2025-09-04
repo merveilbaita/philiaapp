@@ -3,21 +3,19 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import Group
 from django.contrib.auth import login
-
 from salon.models import Prestation
-from .forms import InscriptionForm, ConnexionForm,DepenseForm
-from core.models import ProfilUtilisateur,Depense
+from .forms import InscriptionForm, ConnexionForm, DepenseForm
+from core.models import ProfilUtilisateur, Depense
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import datetime
 from boutique.models import Categorie, LigneDeVente, Produit, Vente
-from django.db.models import Sum, F,DecimalField, ExpressionWrapper
-from django.utils import timezone
-
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 
 now = timezone.now()
+
 
 def inscription_view(request):
     if request.method == 'POST':
@@ -74,7 +72,6 @@ def connexion_view(request):
                     return redirect('dashboard')  # Vers dashboard correspondant
                 elif role == 'GESTIONNAIRE_SALON':
                     return redirect('dashboard_salon')  # Même ici, à adapter plus tard
-
                 else:
                     messages.error(request, "Rôle utilisateur non reconnu.")
                     return redirect('connexion')
@@ -85,10 +82,10 @@ def connexion_view(request):
 
     return render(request, 'core/connexion.html', {'form': form})
 
+
 def deconnexion_view(request):
     logout(request)
-    return redirect('connexion')  # 
-
+    return redirect('connexion')  #
 
 
 @login_required
@@ -138,9 +135,20 @@ def dashboard_view(request):
     # 6) Revenu net
     revenu_net_jour = marge_brute_jour - depenses_boutique_jour
 
-    # ----- reste de vos stats -----
+    # 7) 💳 Dettes totales (toutes ventes avec reste > 0)
+    dettes_qs = (
+        Vente.objects
+        .annotate(
+            reste=ExpressionWrapper(
+                F('total') - F('montant_encaisse'),
+                output_field=DecimalField(max_digits=12, decimal_places=2)
+            )
+        )
+        .filter(reste__gt=0)
+    )
+    dettes_totales = dettes_qs.aggregate(total=Sum('reste'))['total'] or Decimal('0')
 
-    # Valeur de stock et catégories
+    # ----- Stats stock & approvisionnement -----
     produits = Produit.objects.all().annotate(
         valeur_stock=ExpressionWrapper(
             F('prix_achat') * F('quantite_stock'),
@@ -160,7 +168,7 @@ def dashboard_view(request):
     total_produits = produits.count()
     stock_faible = produits.filter(quantite_stock__lte=F('seuil_stock_bas')).count()
 
-    # Revenus du mois
+    # Revenus du mois (sur ventes finalisées)
     mois = aujourdhui.month
     annee = aujourdhui.year
     ventes_mois = Vente.objects.filter(date_vente__month=mois, date_vente__year=annee, est_complete=True)
@@ -174,6 +182,7 @@ def dashboard_view(request):
         'marge_brute_jour': marge_brute_jour,
         'depenses_boutique_jour': depenses_boutique_jour,
         'revenu_net_jour': revenu_net_jour,
+        'dettes_totales': dettes_totales,  # 🆕 pour l’affichage dans le dashboard
 
         # stats stock & ventes
         'total_approvisionnement': total_approvisionnement,
@@ -186,12 +195,11 @@ def dashboard_view(request):
     })
 
 
-
-
 @login_required
 def liste_depenses(request):
     depenses = Depense.objects.order_by('-date_depense')
     return render(request, 'core/depenses/liste.html', {'depenses': depenses})
+
 
 @login_required
 def ajouter_depense(request):
@@ -203,19 +211,20 @@ def ajouter_depense(request):
             return redirect('liste_depenses')
     else:
         form = DepenseForm()
-    
+
     return render(request, 'core/depenses/ajouter.html', {'form': form})
 
-# ✅ Liste pour la BOUTIQUE
 
+# ✅ Liste pour la BOUTIQUE
 @login_required
 def liste_depenses_boutique(request):
     profil = ProfilUtilisateur.objects.get(user=request.user)
     if profil.role != 'GESTIONNAIRE_BOUTIQUE' and profil.role != 'ADMIN':
         return HttpResponseForbidden("Vous n'avez pas la permission d'accéder aux dépenses de la boutique.")
-    
+
     depenses = Depense.objects.filter(entite='BOUTIQUE').order_by('-date_depense')
     return render(request, 'core/depenses/liste_boutique.html', {'depenses': depenses})
+
 
 # ✅ Liste pour le SALON
 @login_required
@@ -223,13 +232,12 @@ def liste_depenses_salon(request):
     profil = ProfilUtilisateur.objects.get(user=request.user)
     if profil.role != 'GESTIONNAIRE_SALON' and profil.role != 'ADMIN':
         return HttpResponseForbidden("Vous n'avez pas la permission d'accéder aux dépenses du salon.")
-    
+
     depenses = Depense.objects.filter(entite='SALON').order_by('-date_depense')
     return render(request, 'core/depenses/liste_salon.html', {'depenses': depenses})
 
 
 # ✅ Ajouter pour la BOUTIQUE
-
 @login_required
 def ajouter_depense_boutique(request):
     # 🔒 Contrôle d’accès
@@ -314,7 +322,7 @@ def ajouter_depense_salon(request):
     reste_h = dispo_homme - dep_h
     reste_f = dispo_femme - dep_f
 
-    if request.method=='POST':
+    if request.method == 'POST':
         form = DepenseForm(request.POST, request.FILES)
         if form.is_valid():
             dep = form.save(commit=False)
@@ -322,10 +330,10 @@ def ajouter_depense_salon(request):
             # contrôle selon le secteur choisi
             if dep.secteur == 'HOMME' and dep.montant > reste_h:
                 form.add_error('montant',
-                    f"Max autorisé pour HOMME aujourd'hui : {reste_h:.2f} CDF")
+                               f"Max autorisé pour HOMME aujourd'hui : {reste_h:.2f} CDF")
             elif dep.secteur == 'FEMME' and dep.montant > reste_f:
                 form.add_error('montant',
-                    f"Max autorisé pour FEMME aujourd'hui : {reste_f:.2f} CDF")
+                               f"Max autorisé pour FEMME aujourd'hui : {reste_f:.2f} CDF")
             else:
                 dep.save()
                 messages.success(request, "Dépense salon enregistrée.")
@@ -343,5 +351,4 @@ def ajouter_depense_salon(request):
         'dispo_femme': dispo_femme,
         'dep_f': dep_f,
         'reste_f': reste_f,
-
     })
