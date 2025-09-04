@@ -94,6 +94,8 @@ def ajouter_mouvement_stock(request):
             type_mouvement = form.cleaned_data['type_mouvement']
             quantite = form.cleaned_data['quantite']
             raison = form.cleaned_data['raison']
+            date_mouv = form.cleaned_data.get('date_mouvement')
+            
             
             try:
                 # Utiliser la méthode ajuster_stock du modèle Produit
@@ -101,7 +103,8 @@ def ajouter_mouvement_stock(request):
                     quantite=quantite,
                     type_mouvement=type_mouvement,
                     utilisateur=request.user,
-                    raison=raison
+                    raison=raison,
+                    date_mouvement = date_mouv,
                 )
                 messages.success(request, f"Stock de '{produit.nom}' ajusté avec succès.")
                 return redirect('historique_mouvements')

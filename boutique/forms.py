@@ -25,7 +25,8 @@ class ProduitForm(forms.ModelForm):
 class MouvementStockForm(forms.ModelForm):
     class Meta:
         model = MouvementStock
-        fields = ['produit', 'type_mouvement', 'quantite', 'raison']
+        fields = ['produit', 'type_mouvement', 'quantite', 'raison', 'date_mouvement']
+        widgets = {'date_mouvement': forms.DateInput(attrs={'type': 'date'})}
 
 
 # ----------------------------
@@ -67,7 +68,7 @@ class VenteForm(forms.ModelForm):
     class Meta:
         model = Vente
         # On ne laisse pas total / montant_encaisse éditables ici
-        fields = ['client_nom']
+        fields = ['date_vente','client_nom']
 
     def clean_acompte(self):
         val = self.cleaned_data.get('acompte')

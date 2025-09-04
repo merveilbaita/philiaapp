@@ -54,7 +54,7 @@ class Produit(models.Model):
             return (self.marge_brute() / self.prix_achat) * 100
         return 0
     
-    def ajuster_stock(self, quantite, type_mouvement, utilisateur, raison=None):
+    def ajuster_stock(self, quantite, type_mouvement, utilisateur, raison=None, date_mouvement=None, vente=None,):
         """
         Ajuste le stock du produit et crée un mouvement de stock
         
@@ -84,7 +84,9 @@ class Produit(models.Model):
             type_mouvement=type_mouvement,
             quantite=quantite,
             utilisateur=utilisateur,
-            raison=raison
+            raison=raison,
+            date_mouvement=date_mouvement or timezone.localdate(),
+            vente=vente
         )
         
         return True
@@ -101,7 +103,7 @@ class Vente(models.Model):
 
     client_nom = models.CharField(max_length=200, blank=True, null=True)
     vendeur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-    date_vente = models.DateTimeField(auto_now_add=True)
+    date_vente = models.DateTimeField(default=timezone.now())
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # = valeur brute de la vente
     est_complete = models.BooleanField(default=False, help_text="Indique si la vente est finalisée")
     montant_encaisse = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
@@ -138,7 +140,8 @@ class Vente(models.Model):
                 quantite=ligne.quantite,
                 type_mouvement='SORTIE_VENTE',
                 utilisateur=self.vendeur,
-                raison=f"Vente #{self.id}"
+                raison=f"Vente #{self.id}",
+                date_mouvement = self.date_vente.date(),
             )
         self.est_complete = True
         self._maj_statut()   # met à jour en fonction de montant_encaisse
@@ -229,6 +232,9 @@ class MouvementStock(models.Model):
     date_mouvement = models.DateTimeField(auto_now_add=True)
     utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     raison = models.TextField(blank=True, null=True, help_text="Ex: Vente #123, Inventaire annuel")
+    date_mouvement=models.DateField(default=timezone.localdate())
+    created_at= models.DateTimeField(auto_now_add=True)
+    vente = models.ForeignKey("Vente", null=True,blank=True, on_delete=models.SET_NULL, related_name="mouvements_stock")
 
     class Meta:
         verbose_name = "Mouvement de stock"
