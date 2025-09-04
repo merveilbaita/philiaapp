@@ -49,6 +49,15 @@
                     <div class="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
                         <span class="text-white text-sm font-semibold">{{ user.first_name.0|default:user.username.0|upper }}</span>
                     </div>
+
+                    <a href="{% url 'liste_dettes' %}" 
+   class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200">
+  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 12.728A9 9 0 0118.364 5.636zM12 9v2m0 4h.01"></path>
+  </svg>
+  Voir les dettes
+</a>
+
                 </div>
 
                 <a href="{% url 'ventes_journaliere' %}" 

@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from .models import Produit, MouvementStock, Vente, Categorie,LigneDeVente
-from .forms import ProduitForm, MouvementStockForm, VenteForm, LigneDeVenteFormSet
+from .forms import ProduitForm, MouvementStockForm, VenteForm, LigneDeVenteFormSet,PaiementForm
 from decimal import Decimal
 from django.db.models import ExpressionWrapper, F, Sum, DecimalField
 
@@ -182,52 +182,30 @@ def creer_vente(request):
 
                 lignes = formset.save(commit=False)
                 for form, ligne in zip(formset.forms, lignes):
-                    # Récupérer saisie libre si aucun produit sélectionné
-                    produit_libre = request.POST.get(f"{form.prefix}-produit_libre", '').strip()
-                    produit_obj = None
-
-                    if ligne.produit_id:
-                        produit_obj = ligne.produit
-                    elif produit_libre:
-                        # get_or_create insensible à la casse sur nom
-                        produit_obj, created = Produit.objects.get_or_create(
-                            nom__iexact=produit_libre,
-                            defaults={
-                                'nom': produit_libre,
-                                'prix_vente': ligne.prix_unitaire_vente or Decimal('0.00'),
-                                'prix_achat': Decimal('0.00'),
-                                # On crée avec un stock égal à la quantité désirée pour éviter l'erreur de stock
-                                'quantite_stock': ligne.quantite or 0,
-                            }
-                        )
-                        # Si le produit existait mais n'a pas assez de stock, on laisse la validation gérer via clean()
-                        ligne.produit = produit_obj
-                    else:
-                        # Aucun produit ni libre : laisser la validation du formset remonter
-                        pass
-
-                    # Si prix de vente manquant et produit connu
+                    # prix par défaut si manquant
                     if (not ligne.prix_unitaire_vente or ligne.prix_unitaire_vente == 0) and ligne.produit:
                         ligne.prix_unitaire_vente = ligne.produit.prix_vente
 
                     ligne.vente = vente
-                    ligne.full_clean()  # pour déclencher clean() (notamment sur stock)
+                    ligne.full_clean()
                     ligne.save()
 
-                # Calcul et finalisation
+                # Montant total & sortie de stock (option A)
                 vente.calculer_total()
-                try:
-                    vente.finaliser()
-                except ValidationError as e:
-                    transaction.set_rollback(True)
-                    messages.error(request, f"Erreur lors de la finalisation : {e}")
-                    return render(request, 'boutique/ventes/creer_vente.html', {
-                        'vente_form': vente_form,
-                        'formset': formset
-                    })
+                vente.finaliser()
+
+                # Acompte ?
+                acompte = vente_form.cleaned_data.get('acompte') or Decimal('0.00')
+                mode = vente_form.cleaned_data.get('mode_paiement') or "ESPECES"
+                if acompte > 0:
+                    # On n’autorise pas plus que le total
+                    acompte = min(acompte, vente.total)
+                    vente.enregistrer_paiement(acompte, utilisateur=request.user, mode=mode, note="Acompte à la création")
 
                 messages.success(request, "Vente enregistrée avec succès.")
                 return redirect('detail_vente', vente.id)
+        else:
+            messages.error(request, "Veuillez corriger les erreurs du formulaire.")
     else:
         vente_form = VenteForm()
         formset = LigneDeVenteFormSet()
@@ -237,6 +215,40 @@ def creer_vente(request):
         'formset': formset
     })
 
+
+# ---- Paiement additionnel sur une vente existante ----
+@login_required
+def ajouter_paiement(request, vente_id):
+    vente = get_object_or_404(Vente, pk=vente_id)
+    if request.method == 'POST':
+        form = PaiementForm(request.POST)
+        if form.is_valid():
+            montant = form.cleaned_data['montant']
+            mode = form.cleaned_data['mode']
+            note = form.cleaned_data.get('note', "")
+            try:
+                vente.enregistrer_paiement(montant, utilisateur=request.user, mode=mode, note=note)
+                messages.success(request, "Paiement enregistré.")
+                return redirect('detail_vente', vente.id)
+            except ValidationError as e:
+                messages.error(request, str(e))
+    else:
+        form = PaiementForm()
+
+    return render(request, 'boutique/ventes/ajouter_paiement.html', {
+        'vente': vente,
+        'form': form
+    })
+
+
+# ---- Liste des dettes (ventes non soldées) ----
+@login_required
+def liste_dettes(request):
+    ventes = (Vente.objects
+              .filter(total__gt=F('montant_encaisse'))
+              .order_by('-date_vente')
+              .select_related('vendeur'))
+    return render(request, 'boutique/ventes/liste_dettes.html', {'ventes': ventes})
 
 @login_required
 def produit_autocomplete(request):

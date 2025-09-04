@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dettes clients – Ventes non soldées | PhiliaApp</title>
+  <link href="{% static 'src/output.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @media print {
+      .no-print { display:none!important; }
+      body { background:#fff!important; }
+      .shadow, .shadow-sm, .shadow-lg { box-shadow:none!important; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gray-50">
+  <!-- Header / Fil d’Ariane -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'dashboard' %}" class="flex items-center gap-3 hover:opacity-90">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 grid place-items-center">
+              <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+            </div>
+            <span class="text-xl font-bold text-gray-800">PhiliaApp</span>
+          </a>
+          <nav class="hidden sm:flex items-center text-sm text-gray-500">
+            <svg class="w-4 h-4 mx-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <a href="{% url 'liste_ventes' %}" class="hover:text-emerald-600">Ventes</a>
+            <svg class="w-4 h-4 mx-2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-gray-700 font-medium">Dettes</span>
+          </nav>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="{% url 'liste_ventes' %}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            Retour aux ventes
+          </a>
+          <button onclick="window.print()" class="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-800">
+            Imprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-8">
+    <!-- En-tête de page -->
+    <div class="mb-6">
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm">
+        <div class="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl font-semibold text-gray-800">Ventes non soldées</h1>
+            <p class="text-sm text-gray-500">Liste des dettes clients (reste à payer &gt; 0)</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="{% url 'ventes_journaliere' %}" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+              Ventes du jour
+            </a>
+            <a href="{% url 'creer_vente' %}" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
+              Nouvelle vente
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table des dettes -->
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-800">Dettes en cours</h2>
+          <span class="text-sm text-gray-500">
+            Total éléments : <span class="font-medium text-gray-700">{{ ventes|length }}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs uppercase tracking-wide text-gray-500 bg-gray-50 border-b border-gray-200">
+              <th class="px-6 py-3">#</th>
+              <th class="px-6 py-3">Client</th>
+              <th class="px-6 py-3 text-right">Total</th>
+              <th class="px-6 py-3 text-right">Encaissé</th>
+              <th class="px-6 py-3 text-right">Reste</th>
+              <th class="px-6 py-3">Statut</th>
+              <th class="px-6 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for v in ventes %}
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-3 font-medium text-gray-800">#{{ v.id }}</td>
+
+                <td class="px-6 py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-r from-green-400 to-blue-500 grid place-items-center text-white text-xs font-bold">
+                      {{ v.client_nom|default:"C"|slice:":1"|upper }}
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-gray-900 font-medium truncate">
+                        {{ v.client_nom|default:"Client comptant" }}
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        Vendeur : {{ v.vendeur.get_full_name|default:v.vendeur.username }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <td class="px-6 py-3 text-right tabular-nums">{{ v.total|floatformat:2 }}</td>
+                <td class="px-6 py-3 text-right tabular-nums">{{ v.montant_encaisse|floatformat:2 }}</td>
+
+                <td class="px-6 py-3 text-right tabular-nums">
+                  <span class="font-semibold {% if v.reste_a_payer > 0 %}text-red-600{% else %}text-emerald-600{% endif %}">
+                    {{ v.reste_a_payer|floatformat:2 }}
+                  </span>
+                </td>
+
+                <td class="px-6 py-3">
+                  {% if v.statut == 'PAYEE' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                      Payée
+                    </span>
+                  {% elif v.statut == 'PARTIELLE' %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                      Partielle
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">
+                      Impayée
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td class="px-6 py-3">
+                  <div class="flex items-center justify-end gap-2">
+                    <a href="{% url 'ajouter_paiement' v.id %}"
+                       class="inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+                      Encaisser
+                    </a>
+                    <a href="{% url 'detail_vente' v.id %}"
+                       class="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">
+                      Détails
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                  Aucune dette en cours.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Aide / Astuces -->
+    <div class="mt-6 text-xs text-gray-500">
+      Astuce : clique sur <span class="font-medium">Encaisser</span> pour ajouter un paiement à la vente sélectionnée.
+      Utilise <span class="font-medium">Détails</span> pour voir la facture complète.
+    </div>
+  </main>
+</body>
+</html>

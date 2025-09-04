@@ -92,6 +92,17 @@
                             <div>
                                 <h1 class="text-2xl lg:text-3xl font-bold text-white">Vente #{{ vente.id }}</h1>
                                 <p class="text-green-100 text-sm lg:text-base">{{ lignes.count }} article{{ lignes.count|pluralize }} vendu{{ lignes.count|pluralize }}</p>
+                                <!-- NEW: Client sous le titre -->
+                                {% if vente.client %}
+                                  <p class="mt-1 text-white/90 text-sm">
+  Client :
+  <span class="font-semibold">{{ vente.nom_client }}</span>
+</p>
+
+                                {% else %}
+                                  <p class="mt-1 text-white/90 text-sm">Client : <span class="font-semibold">{{ vente.nom_client }}</span></p>
+                                {% endif %}
+                                <!-- /NEW -->
                             </div>
                         </div>
                         
@@ -122,6 +133,51 @@
             <!-- Informations de la vente et produits -->
             <div class="xl:col-span-2 space-y-6">
                 
+                <!-- Résumé paiements -->
+                <div class="mt-6 bg-white rounded-xl border p-4">
+                  <h3 class="font-semibold text-gray-800 mb-2">Paiements</h3>
+                  <!-- NEW: Client dans le bloc Paiements -->
+                  <p>
+                    Client :
+                    <strong>
+                  <p>
+  Client : <strong>{{ vente.nom_client }}</strong>
+</p>
+
+                    </strong>
+                  </p>
+                  <!-- /NEW -->
+                  <p>Total vente : <strong>{{ vente.total|floatformat:2 }}</strong></p>
+                  <p>Déjà encaissé : <strong>{{ vente.montant_encaisse|floatformat:2 }}</strong></p>
+                  <p>Reste à payer : 
+                    <strong class="{% if vente.reste_a_payer > 0 %}text-red-600{% else %}text-emerald-600{% endif %}">
+                      {{ vente.reste_a_payer|floatformat:2 }}
+                    </strong>
+                  </p>
+                  <p>Statut : <span class="px-2 py-1 rounded text-white {% if vente.statut == 'PAYEE' %}bg-emerald-600{% elif vente.statut == 'PARTIELLE' %}bg-amber-500{% else %}bg-red-600{% endif %}">
+                    {{ vente.get_statut_display }}
+                  </span></p>
+
+                  <div class="mt-4">
+                    <a href="{% url 'ajouter_paiement' vente.id %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+                      Ajouter un paiement
+                    </a>
+                  </div>
+
+                  {% if vente.paiements.all %}
+                  <div class="mt-4">
+                    <h4 class="font-medium text-gray-700 mb-2">Historique</h4>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      {% for p in vente.paiements.all %}
+                        <li>• {{ p.date_paiement|date:"d/m/Y H:i" }} – {{ p.montant|floatformat:2 }} ({{ p.get_mode_display }}) {{ p.note }}</li>
+                      {% empty %}
+                        <li>Aucun paiement pour l’instant.</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  {% endif %}
+                </div>
+
                 <!-- Informations générales -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden print-shadow">
                     <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -158,9 +214,27 @@
                                         </div>
                                         <div>
                                             <p class="text-sm text-gray-500">Client</p>
-                                            <p class="font-medium text-gray-900">{{ vente.client }}</p>
+                                            <!-- NEW: Affichage robuste du nom client -->
+                                          <p class="text-sm text-gray-500">Client</p>
+<p class="font-medium text-gray-900">{{ vente.nom_client }}</p>
+
+                                            <!-- /NEW -->
                                         </div>
                                     </div>
+                                {% else %}
+                                    <!-- NEW: fallback si pas de client -->
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Client</p>
+                                            <p class="font-medium text-gray-900">{{ vente.nom_client }}</p>
+                                        </div>
+                                    </div>
+                                    <!-- /NEW -->
                                 {% endif %}
                             </div>
                             
@@ -313,7 +387,7 @@
                     <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-800 flex items-center">
                             <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2z"></path>
                             </svg>
                             Statistiques
                         </h3>
@@ -342,7 +416,7 @@
                     <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-800 flex items-center">
                             <svg class="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
                             </svg>
                             Actions
                         </h3>

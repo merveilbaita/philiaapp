@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from decimal import Decimal
 
 class Categorie(models.Model):
     nom = models.CharField(max_length=100, unique=True)
@@ -89,10 +90,24 @@ class Produit(models.Model):
         return True
 
 class Vente(models.Model):
+    STATUT_PAYEE = 'PAYEE'
+    STATUT_PARTIELLE = 'PARTIELLE'
+    STATUT_IMPAYEE = 'IMPAYEE'
+    STATUT_CHOIX = [
+        (STATUT_PAYEE, 'Payée'),
+        (STATUT_PARTIELLE, 'Partiellement payée'),
+        (STATUT_IMPAYEE, 'Impayée'),
+    ]
+
+    client_nom = models.CharField(max_length=200, blank=True, null=True)
     vendeur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     date_vente = models.DateTimeField(auto_now_add=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # = valeur brute de la vente
     est_complete = models.BooleanField(default=False, help_text="Indique si la vente est finalisée")
+    montant_encaisse = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    statut = models.CharField(max_length=12, choices=STATUT_CHOIX, default=STATUT_IMPAYEE)
+    # optionnel : un nom client simple si tu n’as pas de modèle Client
+    client_nom = models.CharField(max_length=200, blank=True, null=True)
 
     class Meta:
         verbose_name = "Vente"
@@ -102,36 +117,61 @@ class Vente(models.Model):
     def __str__(self):
         return f"Vente #{self.id} du {self.date_vente.strftime('%d/%m/%Y')}"
     
+
+    @property
+    def nom_client(self) -> str:
+        """Nom du client prêt à afficher (fallback si vide)."""
+        nom = (self.client_nom or "").strip()
+        return nom if nom else "Client comptant"
+
     def calculer_total(self):
-        """Calcule le total de la vente à partir des lignes"""
         total = sum(ligne.prix_unitaire_vente * ligne.quantite for ligne in self.lignes.all())
         self.total = total
-        self.save()
+        self.save(update_fields=["total"])
         return total
-    
+
     def finaliser(self):
-        """Finalise la vente et met à jour les stocks"""
         if self.est_complete:
             return False
-        
-        # Mettre à jour le stock pour chaque ligne
         for ligne in self.lignes.all():
-            try:
-                # Utiliser directement la méthode ajuster_stock
-                ligne.produit.ajuster_stock(
-                    quantite=ligne.quantite,
-                    type_mouvement='SORTIE_VENTE',
-                    utilisateur=self.vendeur,
-                    raison=f"Vente #{self.id}"
-                )
-            except ValidationError as e:
-                # Annuler la finalisation
-                raise ValidationError(f"Impossible de finaliser la vente: {str(e)}")
-        
-        # Marquer comme complète
+            ligne.produit.ajuster_stock(
+                quantite=ligne.quantite,
+                type_mouvement='SORTIE_VENTE',
+                utilisateur=self.vendeur,
+                raison=f"Vente #{self.id}"
+            )
         self.est_complete = True
-        self.save()
+        self._maj_statut()   # met à jour en fonction de montant_encaisse
+        self.save(update_fields=["est_complete", "statut"])
         return True
+
+    @property
+    def reste_a_payer(self):
+        return (self.total or Decimal('0')) - (self.montant_encaisse or Decimal('0'))
+
+    def _maj_statut(self):
+        if self.montant_encaisse >= self.total:
+            self.statut = self.STATUT_PAYEE
+        elif self.montant_encaisse > 0:
+            self.statut = self.STATUT_PARTIELLE
+        else:
+            self.statut = self.STATUT_IMPAYEE
+
+    def enregistrer_paiement(self, montant, utilisateur=None, mode="ESPECES", note=""):
+        """Ajoute un paiement et met à jour l’encaissement + statut."""
+        if montant <= 0:
+            raise ValidationError("Le montant du paiement doit être positif.")
+        Paiement.objects.create(
+            vente=self,
+            montant=montant,
+            mode=mode,
+            enregistre_par=utilisateur,
+            note=note
+        )
+        self.montant_encaisse = (self.montant_encaisse or Decimal('0')) + Decimal(montant)
+        self._maj_statut()
+        self.save(update_fields=["montant_encaisse", "statut"])
+
 
 class LigneDeVente(models.Model):
     vente = models.ForeignKey(Vente, related_name='lignes', on_delete=models.CASCADE)
@@ -154,6 +194,26 @@ class LigneDeVente(models.Model):
     def sous_total(self):
         """Calcule le sous-total de la ligne"""
         return self.prix_unitaire_vente * self.quantite
+    
+class Paiement(models.Model):
+    MODE_CHOIX = [
+        ("ESPECES", "Espèces"),
+        ("MOBILE", "Mobile Money"),
+        ("BANQUE", "Virement / Carte"),
+        ("AUTRE", "Autre"),
+    ]
+    vente = models.ForeignKey(Vente, related_name="paiements", on_delete=models.CASCADE)
+    montant = models.DecimalField(max_digits=10, decimal_places=2)
+    mode = models.CharField(max_length=10, choices=MODE_CHOIX, default="ESPECES")
+    date_paiement = models.DateTimeField(auto_now_add=True)
+    enregistre_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    note = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['-date_paiement']
+
+    def __str__(self):
+        return f"Paiement {self.montant} sur vente #{self.vente_id}"
 
 class MouvementStock(models.Model):
     """ Pour l'historique des mouvements de stock """

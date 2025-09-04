@@ -15,9 +15,12 @@ urlpatterns = [
     path('stock/ajuster/', views.ajouter_mouvement_stock, name='ajouter_mouvement_stock'),
 
     # Ventes
+    path('ventes/<int:vente_id>/paiements/ajouter/', views.ajouter_paiement, name='ajouter_paiement'),
+    path('ventes/dettes/', views.liste_dettes, name='liste_dettes'),
     path('ventes/', views.liste_ventes, name='liste_ventes'),
     path('ventes/<int:pk>/', views.detail_vente, name='detail_vente'),
     path('ventes/nouvelle/', views.creer_vente, name='creer_vente'),
     path('ventes/journalier/', views.ventes_journaliere, name='ventes_journaliere'),
     path('produit-autocomplete/', views.produit_autocomplete, name='produit_autocomplete'),
+
 ]

@@ -1,0 +1,136 @@
+{% load static %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ajouter un paiement – Vente #{{ vente.id }} | PhiliaApp</title>
+
+  <!-- Tailwind compilé de ton projet -->
+  <link href="{% static 'src/output.css' %}" rel="stylesheet">
+   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Style utilitaire pour uniformiser les champs -->
+  <style>
+    .form-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+    .form-input { @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white; }
+    .form-help  { @apply text-xs text-gray-500 mt-1; }
+    .form-error { @apply text-sm text-red-600 mt-1; }
+    .btn { @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition; }
+    .btn-primary { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+    .btn-ghost   { @apply border border-gray-300 text-gray-700 hover:bg-gray-50; }
+    .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium; }
+    .badge-green { @apply bg-emerald-100 text-emerald-700; }
+    .badge-amber { @apply bg-amber-100 text-amber-700; }
+    .badge-slate { @apply bg-slate-100 text-slate-700; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gray-50">
+  <div class="max-w-3xl mx-auto p-6">
+
+    <!-- En-tête / Fil d’Ariane -->
+    <div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
+      <a href="{% url 'liste_ventes' %}" class="hover:text-emerald-600">Ventes</a>
+      <span>/</span>
+      <a href="{% url 'detail_vente' vente.id %}" class="hover:text-emerald-600">Vente #{{ vente.id }}</a>
+      <span>/</span>
+      <span class="text-gray-700 font-medium">Ajouter un paiement</span>
+    </div>
+
+    <!-- Carte principale -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+      <!-- Titre -->
+      <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-semibold text-gray-800">Ajouter un paiement</h1>
+          <p class="text-sm text-gray-500">Vente #{{ vente.id }}</p>
+        </div>
+
+        <!-- Statut encaissement -->
+        {% if vente.reste_a_payer|floatformat:2 == "0.00" or vente.reste_a_payer <= 0 %}
+          <span class="badge badge-green">Soldée</span>
+        {% elif vente.montant_encaisse > 0 %}
+          <span class="badge badge-amber">Partiellement payée</span>
+        {% else %}
+          <span class="badge badge-slate">Non payée</span>
+        {% endif %}
+      </div>
+
+      <!-- Résumé de la vente -->
+      <div class="px-6 py-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
+          <p class="text-xs uppercase tracking-wide text-gray-500">Total</p>
+          <p class="mt-1 text-lg font-semibold text-gray-800">
+            {{ vente.total|floatformat:2 }}
+          </p>
+        </div>
+        <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
+          <p class="text-xs uppercase tracking-wide text-gray-500">Encaissé</p>
+          <p class="mt-1 text-lg font-semibold text-gray-800">
+            {{ vente.montant_encaisse|floatformat:2 }}
+          </p>
+        </div>
+        <div class="rounded-xl bg-gray-50 p-4 border border-gray-100">
+          <p class="text-xs uppercase tracking-wide text-gray-500">Reste à payer</p>
+          <p class="mt-1 text-lg font-semibold {% if vente.reste_a_payer <= 0 %}text-emerald-700{% else %}text-gray-800{% endif %}">
+            {{ vente.reste_a_payer|floatformat:2 }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Formulaire -->
+      <form method="post" class="px-6 pb-6 space-y-5">
+        {% csrf_token %}
+
+        <!-- Affiche les erreurs globales -->
+        {% if form.non_field_errors %}
+          <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <!-- Rendu des champs avec widget_tweaks -->
+        {% for field in form %}
+          <div>
+            <label for="{{ field.id_for_label }}" class="form-label">
+              {{ field.label }}
+              {% if field.field.required %}
+                <span class="text-red-500" title="Champ requis">*</span>
+              {% endif %}
+            </label>
+
+            {# Ajoute des classes aux champs automatiquement #}
+            {% if field.errors %}
+              {% render_field field class+="form-input border-red-300 focus:ring-red-500 focus:border-red-500" %}
+              <p class="form-error">{{ field.errors|striptags }}</p>
+            {% else %}
+              {% render_field field class+="form-input" %}
+            {% endif %}
+
+            {% if field.help_text %}
+              <p class="form-help">{{ field.help_text|safe }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        <!-- Actions -->
+        <div class="flex items-center gap-3 pt-2">
+          <a href="{% url 'detail_vente' vente.id %}" class="flex items-center justify-center border-green-200 border-2 px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-red-600 font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg focus:ring-4 focus:ring-emerald-200 outline-none">
+            Annuler
+          </a>
+          <button type="submit" class="flex items-center justify-center border-green-200 border-2 px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-green-600 font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg focus:ring-4 focus:ring-emerald-200 outline-none">
+            Enregistrer le paiement
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Astuce -->
+    <div class="mt-4 text-xs text-gray-500">
+      Astuce : assure-toi que le « Montant » ne dépasse pas le <span class="font-medium">reste à payer</span>.
+    </div>
+  </div>
+</body>
+</html>
