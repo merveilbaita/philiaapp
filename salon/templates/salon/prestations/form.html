@@ -81,19 +81,28 @@
             {% for field in form %}
               <div>
                 <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                  {{ field.label }}
+                  {% if field.name == "date_prestation" %}
+                    Date & heure de la prestation
+                  {% else %}
+                    {{ field.label }}
+                  {% endif %}
                   {% if field.field.required %}
                     <span class="text-red-500 ml-1">*</span>
                   {% endif %}
                 </label>
-                
-                <!-- Utilisation du rendu Django original -->
+
+                {# Rendu du champ tel quel : le widget du form met déjà type="datetime-local" #}
                 {{ field }}
 
-                {% if field.help_text %}
+                {# Aide spécifique au datetime #}
+                {% if field.name == "date_prestation" %}
+                  <p class="mt-1 text-xs text-gray-500">
+                    Sélectionne la date et l’heure réelles de la prestation (le calcul de commission utilisera cette date).
+                  </p>
+                {% elif field.help_text %}
                   <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
                 {% endif %}
-                
+
                 {% for error in field.errors %}
                   <p class="mt-1 text-sm text-red-600 flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,8 +164,6 @@
     form select:focus {
       outline: none;
       border-color: #a855f7;
-      ring: 2px;
-      ring-color: rgba(168, 85, 247, 0.2);
       box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
     }
 
@@ -169,7 +176,7 @@
       padding-right: 2.5rem;
     }
 
-    /* Styles pour les checkboxes multiples (ModelMultipleChoiceField) */
+    /* Liste checkboxes (si jamais) */
     form ul {
       list-style: none;
       padding: 0;
@@ -179,20 +186,12 @@
       border-radius: 0.5rem;
       background-color: white;
     }
-
     form ul li {
       padding: 0.5rem 0.75rem;
       border-bottom: 1px solid #f3f4f6;
     }
-
-    form ul li:last-child {
-      border-bottom: none;
-    }
-
-    form ul li:hover {
-      background-color: #f9fafb;
-    }
-
+    form ul li:last-child { border-bottom: none; }
+    form ul li:hover { background-color: #f9fafb; }
     form ul li label {
       display: flex;
       align-items: center;
@@ -200,7 +199,6 @@
       margin: 0;
       font-weight: normal;
     }
-
     form ul li input[type="checkbox"] {
       width: auto;
       margin-right: 0.5rem;
