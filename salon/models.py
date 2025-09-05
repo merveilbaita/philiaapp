@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from decimal import Decimal
+from django.utils import timezone
 
 
 class Secteur(models.Model):
@@ -56,7 +57,7 @@ class Prestation(models.Model):
     personnel = models.ForeignKey(Personnel, on_delete=models.PROTECT)
     service = models.ForeignKey(Service, on_delete=models.PROTECT)
     secteur = models.ForeignKey(Secteur, on_delete=models.PROTECT)
-    date_prestation = models.DateTimeField(auto_now_add=True)
+    date_prestation = models.DateTimeField(default=timezone.now())
     montant_paye = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):

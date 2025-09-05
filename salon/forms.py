@@ -9,5 +9,5 @@ class PersonnelForm(forms.ModelForm):
 class PrestationForm(forms.ModelForm):
     class Meta:
         model = Prestation
-        fields = ['personnel', 'service', 'montant_paye']
+        fields = ['personnel', 'service', 'montant_paye', 'date_prestation']
 
