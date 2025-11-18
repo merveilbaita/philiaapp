@@ -3,6 +3,7 @@
 from decimal import Decimal
 from django import forms
 from django.forms.models import inlineformset_factory
+from django.utils import timezone
 
 from .models import (
     Produit,
@@ -42,7 +43,21 @@ class VenteForm(forms.ModelForm):
     client_nom = forms.CharField(
         required=False,
         label="Nom du client",
-        widget=forms.TextInput(attrs={"placeholder": "Ex: Jean Dupont"})
+        widget=forms.TextInput(attrs={
+            "placeholder": "Ex: Jean Dupont",
+            "class": "form-input"
+        })
+    )
+
+    date_vente = forms.DateTimeField(
+        required=True,
+        label="Date de la vente",
+        initial=timezone.now,  # ← Date du jour par défaut
+        widget=forms.DateTimeInput(attrs={
+            "class": "form-input datetime-picker",
+            "placeholder": "Sélectionner une date",
+            "readonly": "readonly"  # Empêche la saisie manuelle
+        })
     )
 
     acompte = forms.DecimalField(
@@ -50,7 +65,10 @@ class VenteForm(forms.ModelForm):
         min_value=Decimal('0.00'),
         label="Acompte reçu",
         initial=Decimal('0.00'),
-        widget=forms.NumberInput(attrs={"step": "0.01"})
+        widget=forms.NumberInput(attrs={
+            "step": "0.01",
+            "class": "form-input"
+        })
     )
 
     MODE_CHOIX = (
@@ -62,20 +80,19 @@ class VenteForm(forms.ModelForm):
     mode_paiement = forms.ChoiceField(
         required=False,
         choices=MODE_CHOIX,
-        label="Mode de paiement (acompte)"
+        label="Mode de paiement (acompte)",
+        widget=forms.Select(attrs={"class": "form-select"})
     )
 
     class Meta:
         model = Vente
-        # On ne laisse pas total / montant_encaisse éditables ici
-        fields = ['date_vente','client_nom']
+        fields = ['date_vente', 'client_nom']
 
     def clean_acompte(self):
         val = self.cleaned_data.get('acompte')
         if val in (None, ""):
             return Decimal('0.00')
         return Decimal(val)
-
 
 class LigneDeVenteForm(forms.ModelForm):
     class Meta:
@@ -108,4 +125,5 @@ class PaiementForm(forms.ModelForm):
             'montant': 'Montant à encaisser',
             'mode': 'Mode de paiement',
             'note': 'Note (facultatif)',
+
         }
