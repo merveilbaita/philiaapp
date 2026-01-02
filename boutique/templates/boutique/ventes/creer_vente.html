@@ -9,10 +9,6 @@
     <link href="{% static 'src/output.css' %}" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     
-    <!-- FLATPICKR CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/material_green.css">
-    
     <style>
         .form-input {
             @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 outline-none bg-white;
@@ -66,40 +62,20 @@
             color: #6b7280;
         }
 
-        /* STYLES FLATPICKR PERSONNALISÉS */
-        .flatpickr-calendar {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 0.75rem !important;
-            font-family: inherit !important;
+        /* Style pour le champ datetime-local natif */
+        input[type="datetime-local"] {
+            cursor: pointer;
         }
         
-        .flatpickr-day.selected {
-            background: #10b981 !important;
-            border-color: #10b981 !important;
-        }
-        
-        .flatpickr-day.today {
-            border-color: #10b981 !important;
-        }
-        
-        .flatpickr-day:hover {
-            background: #d1fae5 !important;
-            border-color: #10b981 !important;
-        }
-        
-        .flatpickr-time input:hover,
-        .flatpickr-time input:focus {
-            background: #f0fdf4 !important;
-        }
-
-        .datetime-picker {
-            cursor: pointer !important;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1.5rem;
-            padding-right: 3rem !important;
+        /* Icône calendrier personnalisée pour desktop */
+        @media (min-width: 769px) {
+            input[type="datetime-local"].datetime-picker {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 1rem center;
+                background-size: 1.5rem;
+                padding-right: 3rem;
+            }
         }
 
         /* Responsive amélioré */
@@ -270,16 +246,16 @@
                                         </label>
                                         
                                         {% if field.name == 'date_vente' %}
-                                            <!-- CHAMP DATE AVEC FLATPICKR -->
+                                            <!-- CHAMP DATE NATIF HTML5 -->
                                             <div class="relative">
-                                                {{ field|add_class:"form-input datetime-picker" }}
+                                                {{ field|add_class:"form-input" }}
                                             </div>
                                             <p class="text-xs text-gray-500 mt-1 flex items-center">
                                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                 </svg>
-                                                Date du jour par défaut. Cliquez pour anti-dater si nécessaire.
+                                                Date du jour par défaut. Cliquez pour modifier si nécessaire.
                                             </p>
                                         {% elif field.field.widget.input_type == 'select' %}
                                             {{ field|add_class:"form-select" }}
@@ -540,7 +516,7 @@
                                 Annuler
                             </a>
                             
-                            <button type="submit" class="flex items-center justify-center border-green-200 border-2 px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg focus:ring-4 text-green-800 focus:ring-emerald-200 outline-none">
+                            <button type="submit" class="flex items-center justify-center border-green-200 border-2 px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg focus:ring-4 focus:ring-emerald-200 outline-none">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M5 13l4 4L19 7"/>
@@ -554,35 +530,22 @@
         </form>
     </main>
 
-    <!-- SCRIPTS FLATPICKR -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"></script>
-    
     <!-- Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // CONFIGURATION FLATPICKR
-            const dateInput = document.querySelector('.datetime-picker');
+            // CONFIGURATION DU CHAMP DATE (natif HTML5)
+            const dateInput = document.querySelector('input[type="datetime-local"]');
             
             if (dateInput) {
-                flatpickr(dateInput, {
-                    enableTime: true,
-                    dateFormat: "Y-m-d H:i:S",
-                    time_24hr: true,
-                    locale: "fr",
-                    defaultDate: new Date(),
-                    altInput: true,
-                    altFormat: "d/m/Y à H:i",
-                    maxDate: "today",
-                    minuteIncrement: 1,
-                    allowInput: false,
-                    onReady: function(dateObj, dateStr, instance) {
-                        instance.calendarContainer.classList.add('shadow-2xl');
-                    },
-                    onChange: function(selectedDates, dateStr, instance) {
-                        dateInput.classList.add('highlight');
-                        setTimeout(() => dateInput.classList.remove('highlight'), 500);
-                    }
+                // Limiter au jour actuel (pas de dates futures)
+                const today = new Date();
+                const maxDateTime = today.toISOString().slice(0, 16);
+                dateInput.setAttribute('max', maxDateTime);
+                
+                // Animation au changement
+                dateInput.addEventListener('change', function() {
+                    this.classList.add('highlight');
+                    setTimeout(() => this.classList.remove('highlight'), 500);
                 });
             }
 
