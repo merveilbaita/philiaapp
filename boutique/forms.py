@@ -10,7 +10,7 @@ from .models import (
     MouvementStock,
     Vente,
     LigneDeVente,
-    Paiement,   # <- nouveau
+    Paiement,
 )
 
 # ----------------------------
@@ -39,6 +39,8 @@ class VenteForm(forms.ModelForm):
     Formulaire de création de vente.
     On expose un champ client simple + des champs non-modèle
     pour encaisser un acompte à la création.
+    
+    ✅ Compatible avec input natif HTML5 datetime-local (sans Flatpickr)
     """
     client_nom = forms.CharField(
         required=False,
@@ -52,11 +54,9 @@ class VenteForm(forms.ModelForm):
     date_vente = forms.DateTimeField(
         required=True,
         label="Date de la vente",
-        initial=timezone.now,  # ← Date du jour par défaut
         widget=forms.DateTimeInput(attrs={
+            "type": "datetime-local",  # ← INPUT NATIF HTML5 (fonctionne mobile + desktop)
             "class": "form-input datetime-picker",
-            "placeholder": "Sélectionner une date",
-            "readonly": "readonly"  # Empêche la saisie manuelle
         })
     )
 
@@ -67,7 +67,8 @@ class VenteForm(forms.ModelForm):
         initial=Decimal('0.00'),
         widget=forms.NumberInput(attrs={
             "step": "0.01",
-            "class": "form-input"
+            "class": "form-input",
+            "placeholder": "0.00"
         })
     )
 
@@ -88,11 +89,25 @@ class VenteForm(forms.ModelForm):
         model = Vente
         fields = ['date_vente', 'client_nom']
 
+    def __init__(self, *args, **kwargs):
+        """
+        Initialise le formulaire avec la date/heure actuelle par défaut.
+        Format YYYY-MM-DDTHH:MM requis pour datetime-local.
+        """
+        super().__init__(*args, **kwargs)
+        
+        # Ne définir la date par défaut que pour les nouvelles ventes (pas les modifications)
+        if not self.instance.pk and not self.initial.get('date_vente'):
+            # Format ISO 8601 requis par datetime-local : "2024-01-15T14:30"
+            self.initial['date_vente'] = timezone.now().strftime('%Y-%m-%dT%H:%M')
+
     def clean_acompte(self):
+        """Convertit l'acompte en Decimal, ou 0.00 si vide."""
         val = self.cleaned_data.get('acompte')
         if val in (None, ""):
             return Decimal('0.00')
         return Decimal(val)
+
 
 class LigneDeVenteForm(forms.ModelForm):
     class Meta:
@@ -125,5 +140,4 @@ class PaiementForm(forms.ModelForm):
             'montant': 'Montant à encaisser',
             'mode': 'Mode de paiement',
             'note': 'Note (facultatif)',
-
         }
